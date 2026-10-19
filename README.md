@@ -17,6 +17,7 @@ ssh "activate <site> <release>"                    (atomic symlink swap + prune)
       site: deanpcmad.com
       source: _site
       host: 100.x.y.z
+      port: 2222
       ssh_key:
         from_secret: deploy_ssh_key
       known_hosts:
@@ -28,9 +29,10 @@ ssh "activate <site> <release>"                    (atomic symlink swap + prune)
 | `site`        | yes      |          | site directory on the server, e.g. `deanpcmad.com`      |
 | `source`      | no       | `_site`  | build output directory                                  |
 | `host`        | yes      |          | server address. Use the Tailscale IP: MagicDNS may not resolve in step containers |
+| `port`        | no       | `22`     | SSH port, e.g. `2222` when Tailscale SSH has port 22    |
 | `user`        | no       | `deploy` |                                                         |
 | `ssh_key`     | yes      |          | private key, from a secret                              |
-| `known_hosts` | yes      |          | the server's host key line (`<host> ssh-ed25519 AAAA…`), so host key checking stays on |
+| `known_hosts` | yes      |          | the server's host key line (`<host> ssh-ed25519 AAAA…`), so host key checking stays on. Use the plain host even on another port |
 
 Limit both secrets to the `ghcr.io/d34ndev/static-deploy` image so that build
 steps can't read them.
@@ -51,6 +53,12 @@ The gate has to handle two commands:
   `releases/<release>`, and prunes old releases.
 
 `<site>/releases/` must already exist on the server.
+
+The forced command only works with OpenSSH. Tailscale SSH ignores
+`authorized_keys`, so if the server uses Tailscale SSH on port 22, run OpenSSH
+on another port for deploys and set `port`. Making the gate the deploy user's
+login shell (it accepts `-c "<cmd>"`) also restricts that user over Tailscale
+SSH.
 
 The upload compares files by checksum, not mtime, because a fresh CI build
 touches every file, and mtime comparison would never hardlink anything. Files
