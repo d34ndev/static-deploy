@@ -13,6 +13,7 @@ ssh "activate <site> <release>"                    (atomic symlink swap + prune)
 ```yaml
   - name: deploy
     image: ghcr.io/d34ndev/static-deploy:1
+    pull: true   # :1 moves with each v1.x release
     settings:
       site: deanpcmad.com
       source: _site
